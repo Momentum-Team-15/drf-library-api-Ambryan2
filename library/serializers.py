@@ -2,10 +2,9 @@ from .models import User, Book, Note, Track
 from rest_framework import serializers
 
 class BookSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Book
-        fields = ('id','title', 'author', 'publication_date', 'genre','featured') 
+        fields = ('id','title', 'author', 'publication_date', 'genre','featured',) 
 
 class UserSerializer(serializers.ModelSerializer):
 

@@ -20,8 +20,13 @@ def api_root(request, format=None):
         'books': reverse('book_list', request=request, format=format),
         'notes': reverse('notes_list', request=request, format=format),
     })
+
 #TODO view for all books, create book, to view all featured books
 class BookList(APIView):
+    books = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly,)
+
     def get(self, request, format=None):
         """
         Return a list of all books.
@@ -29,6 +34,7 @@ class BookList(APIView):
         books = Book.objects.all()
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data)
+
     def post(self, request, format=None):
         """
         Add a book to all books
@@ -39,22 +45,33 @@ class BookList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self,request,id,format=None):
+# Edit book and delete book. Still Not finished
+class BookDetail(APIView):
+    books = Book.objects.all()
+    serializer_class = BookSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly,)
+
+    def get(self, request,pk, format=None):
+        """
+        Return a list of all books.
+        """
+        books = Book.objects.filter(id=pk)
+        serializer = BookSerializer(books, many=True)
+        return Response(serializer.data)
+
+    def put(self,request,pk,format=None):
         """
         Allow user to update a book being tracked. Note that only admins should be allowed to perform this action
         """
-        book = self.get_object(id)
+        book = Book.objects.filter(id=pk)
         serializer = BookSerializer(book, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data)
     
     def delete(self, request, pk, format=None):
         """
         Note that only admins should be able to perform this action
         """
-        book = self.get_object(pk)
+        book = Book.objects.get(id=pk)
         book.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -91,11 +108,9 @@ class TrackList(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#TODO view for Book detail page
 
+# Need a track detail so indiv can update tracks
 
-
-#TODO view to allow search by author or titles
 
 # TODO view to edit note, read all notes, and create note 
 class NotesList(APIView):
@@ -130,3 +145,5 @@ class NotesList(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# need a notes detail so indiv can edit said field 
