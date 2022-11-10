@@ -5,9 +5,10 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from django.http import Http404
 from rest_framework import status
+from django.db.models import Q
 
 from .models import Book,User,Track,Note
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsAdminOrReadOnly
 from .serializers import BookSerializer, UserSerializer, NoteSerializer, TrackSerializer
 
 # Just need to add permissions
@@ -25,7 +26,7 @@ def api_root(request, format=None):
 class BookList(APIView):
     books = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
 
     def get(self, request, format=None):
         """
@@ -49,7 +50,7 @@ class BookList(APIView):
 class BookDetail(APIView):
     books = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
 
     def get(self, request,pk, format=None):
         """
@@ -63,9 +64,11 @@ class BookDetail(APIView):
         """
         Allow user to update a book being tracked. Note that only admins should be allowed to perform this action
         """
-        book = Book.objects.filter(id=pk)
+        book = Book.objects.get(id=pk)
         serializer = BookSerializer(book, data=request.data)
-        return Response(serializer.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
     
     def delete(self, request, pk, format=None):
         """
@@ -77,6 +80,11 @@ class BookDetail(APIView):
 
 # TODO track that allows users to create a book to track, displays all tracked, and allow to update
 class TrackList(APIView):
+    tracks = Track.objects.all()
+    serializer_class = TrackSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+
+
     def get(self, request, format=None):
         """
         Return a list of all tracks.
@@ -97,29 +105,45 @@ class TrackList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self,request,id,format=None):
+# Allow to look indiv track and be able to update tracks
+class TrackDetail(APIView):
+    tracks = Track.objects.all()
+    serializer_class = TrackSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+    # Note need to change to isOwner
+
+    def get(self, request,pk, format=None):
         """
-        Allow user to update a book being tracked
-        Note that only user should be able to update
+        Return a list of all tracks.
         """
-        track = self.get_object(id)
+        tracks = Track.objects.filter(id=pk,user=request.user)
+        serializer = TrackSerializer(tracks, many=True)
+        return Response(serializer.data)
+
+    def put(self,request,pk,format=None):
+        """
+        Allow user to update a tracking status on a book. Note that only owner should be allowed to perform this action
+        """
+        track = Track.objects.get(id=pk)
         serializer = TrackSerializer(track, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# Need a track detail so indiv can update tracks
-
+        return Response(serializer.data)
 
 # TODO view to edit note, read all notes, and create note 
 class NotesList(APIView):
+    notes = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+
+
     def get(self, request, format=None):
         """
         Return a list of all Notes.
         Note only the user should see their notes. Unless a note is shown as public
         """
-        notes = Note.objects.all()
+        notes = Note.objects.filter(Q(private='Public') | Q(user=request.user))
         serializer = NoteSerializer(notes, many=True)
         return Response(serializer.data)
 
@@ -134,16 +158,31 @@ class NotesList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self,request,id,format=None):
+# notes detail so indiv can edit indiv notes 
+class NoteDetail(APIView):
+
+    notes = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+    # Note need to change to isOwner
+
+    def get(self, request,pk, format=None):
         """
-        Allow user to update a note on a book.
-        Only user can update their note on a book
+        Return singular note.
         """
-        note = self.get_object(id)
+        note = Note.objects.filter(id=pk,user=request.user)
+        serializer = NoteSerializer(note, many=True)
+        return Response(serializer.data)
+
+    def put(self,request,pk,format=None):
+        """
+        Allow user to update a note on a book. Note that only owner should be allowed to perform this action
+        """
+        note = Note.objects.get(id=pk)
         serializer = NoteSerializer(note, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data)
 
-# need a notes detail so indiv can edit said field 
+# TODO write the above classes except using generics

@@ -25,7 +25,9 @@ urlpatterns = [
     path('books/', views.BookList.as_view(), name='book_list'),
     path('books/<int:pk>',views.BookDetail.as_view(), name='book_detail'),
     path('tracking/',views.TrackList.as_view(), name='track_list'),
+    path('tracking/<int:pk>',views.TrackDetail.as_view(), name='track_detail'),
     path('notes/', views.NotesList.as_view(), name='notes_list'),
+    path('notes/<int:pk>',views.NoteDetail.as_view(), name='note_detail'),
     path('', views.api_root),
 ]
 

@@ -16,7 +16,7 @@ class NoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ('id','user', 'created_at','updated_at','notes', 'private') 
+        fields = ('id','user','book', 'created_at','updated_at','notes', 'private') 
 
 class TrackSerializer(serializers.ModelSerializer):
 
