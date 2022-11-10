@@ -23,11 +23,11 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('accounts/', include('registration.backends.simple.urls')),
     path('books/', views.BookList.as_view(), name='book_list'),
-    path('books/<int:pk>',views.BookDetail.as_view(), name='book_detail'),
+    path('books/<int:pk>',views.BookDetail.as_view(), name='book-detail'),
     path('tracking/',views.TrackList.as_view(), name='track_list'),
-    path('tracking/<int:pk>',views.TrackDetail.as_view(), name='track_detail'),
+    path('tracking/<int:pk>',views.TrackDetail.as_view(), name='track-detail'),
     path('notes/', views.NotesList.as_view(), name='notes_list'),
-    path('notes/<int:pk>',views.NoteDetail.as_view(), name='note_detail'),
+    path('notes/<int:pk>',views.NoteDetail.as_view(), name='note-detail'),
     path('', views.api_root),
 ]
 

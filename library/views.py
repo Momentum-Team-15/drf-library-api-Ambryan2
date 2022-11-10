@@ -6,6 +6,7 @@ from rest_framework.reverse import reverse
 from django.http import Http404
 from rest_framework import status
 from django.db.models import Q
+# from django.contrib.auth.decorators import login_required
 
 from .models import Book,User,Track,Note
 from .permissions import IsAdminOrReadOnly
@@ -26,14 +27,14 @@ def api_root(request, format=None):
 class BookList(APIView):
     books = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get(self, request, format=None):
         """
         Return a list of all books.
         """
         books = Book.objects.all()
-        serializer = BookSerializer(books, many=True)
+        serializer = BookSerializer(books, many=True,context={'request': request})
         return Response(serializer.data)
 
     def post(self, request, format=None):
@@ -50,14 +51,14 @@ class BookList(APIView):
 class BookDetail(APIView):
     books = Book.objects.all()
     serializer_class = BookSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+    permission_classes = (permissions.IsAdminUser,)
 
     def get(self, request,pk, format=None):
         """
         Return a list of all books.
         """
         books = Book.objects.filter(id=pk)
-        serializer = BookSerializer(books, many=True)
+        serializer = BookSerializer(books, many=True,context={'request': request})
         return Response(serializer.data)
 
     def put(self,request,pk,format=None):
@@ -90,8 +91,8 @@ class TrackList(APIView):
         Return a list of all tracks.
         Note That only the user tracking should be able to see
         """
-        tracked = Track.objects.all()
-        serializer = TrackSerializer(tracked, many=True)
+        tracked = Track.objects.filter(user=request.user)
+        serializer = TrackSerializer(tracked, many=True,context={'request': request})
         return Response(serializer.data)
 
     def post(self,request,format=None):
@@ -99,7 +100,7 @@ class TrackList(APIView):
         Allow user to tack a book.
         Note that only the user should be able to perform action
         """
-        serializer = TrackSerializer(data=request.data)
+        serializer = TrackSerializer(data=request.data,context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -116,8 +117,8 @@ class TrackDetail(APIView):
         """
         Return a list of all tracks.
         """
-        tracks = Track.objects.filter(id=pk,user=request.user)
-        serializer = TrackSerializer(tracks, many=True)
+        tracks = Track.objects.filter(id=pk)
+        serializer = TrackSerializer(tracks, many=True,context={'request': request})
         return Response(serializer.data)
 
     def put(self,request,pk,format=None):
@@ -125,7 +126,7 @@ class TrackDetail(APIView):
         Allow user to update a tracking status on a book. Note that only owner should be allowed to perform this action
         """
         track = Track.objects.get(id=pk)
-        serializer = TrackSerializer(track, data=request.data)
+        serializer = TrackSerializer(track, data=request.data,context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -144,7 +145,7 @@ class NotesList(APIView):
         Note only the user should see their notes. Unless a note is shown as public
         """
         notes = Note.objects.filter(Q(private='Public') | Q(user=request.user))
-        serializer = NoteSerializer(notes, many=True)
+        serializer = NoteSerializer(notes, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self,request,format=None):
@@ -152,7 +153,7 @@ class NotesList(APIView):
         Allow user to make a note on a book.
         Only user should be able to make a new note on a book
         """
-        serializer = NoteSerializer(data=request.data)
+        serializer = NoteSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -163,15 +164,15 @@ class NoteDetail(APIView):
 
     notes = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,IsAdminOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticated,IsAdminOrReadOnly,)
     # Note need to change to isOwner
 
     def get(self, request,pk, format=None):
         """
         Return singular note.
         """
-        note = Note.objects.filter(id=pk,user=request.user)
-        serializer = NoteSerializer(note, many=True)
+        note = Note.objects.filter(id=pk)
+        serializer = NoteSerializer(note, many=True, context={'request': request})
         return Response(serializer.data)
 
     def put(self,request,pk,format=None):
@@ -179,10 +180,10 @@ class NoteDetail(APIView):
         Allow user to update a note on a book. Note that only owner should be allowed to perform this action
         """
         note = Note.objects.get(id=pk)
-        serializer = NoteSerializer(note, data=request.data)
+        serializer = NoteSerializer(note, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.data)
 
-# TODO write the above classes except using generics
+# TODO write the above classes except using generics for practice

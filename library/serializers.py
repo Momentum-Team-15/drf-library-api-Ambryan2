@@ -1,10 +1,11 @@
 from .models import User, Book, Note, Track
 from rest_framework import serializers
 
-class BookSerializer(serializers.ModelSerializer):
+class BookSerializer(serializers.HyperlinkedModelSerializer):
+
     class Meta:
         model = Book
-        fields = ('id','title', 'author', 'publication_date', 'genre','featured',) 
+        fields = ('url','id','title', 'author', 'publication_date', 'genre','featured') 
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -16,10 +17,10 @@ class NoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ('id','user','book', 'created_at','updated_at','notes', 'private') 
+        fields = ('url','id','user','book', 'created_at','updated_at','notes', 'private') 
 
 class TrackSerializer(serializers.ModelSerializer):
-
+    
     class Meta:
         model = Track
-        fields = ('id','book', 'user', 'status') 
+        fields = ('url','id','book', 'user', 'status') 
